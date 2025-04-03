@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Cliente</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(-45deg, #e3f2fd, #bbdefb, #90caf9, #64b5f6);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      min-height: 100vh;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .tool-card {
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      background-color: white;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .tool-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+      cursor: pointer;
+    }
+
+    .tool-icon {
+      font-size: 42px;
+      margin-bottom: 15px;
+    }
+
+    .badge-disabled {
+      background-color: #adb5bd;
+      color: white;
+      font-size: 0.8rem;
+    }
+
+    .logout-btn {
+      font-size: 0.9rem;
+    }
+
+    .tool-section-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      margin-top: 2rem;
+    }
+
+    #particles-js {
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      top: 0;
+      left: 0;
+    }
+
+    .content {
+      position: relative;
+      z-index: 1;
+    }
+
+  </style>
+</head>
+<body class="container py-5">
+  <div id="particles-js"></div>
+  <div class="content">
+  <div class="top-bar">
+    <h2 class="fw-bold">📊 Dashboard</h2>
+    <div>
+      <span class="me-3">👤 <strong>{{ username }}</strong></span>
+      <a href="{{ url_for('auth.logout') }}" class="btn btn-sm btn-danger logout-btn">Logout</a>
+    </div>
+  </div>
+
+  <p class="mb-4">Seleziona uno dei tool disponibili. L'accesso è abilitato solo ai moduli acquistati.</p>
+
+  {% set all_tools = {
+    'manage_drivers': {
+      'name': 'Gestione Autisti',
+      'desc': 'Registra viaggi, consumo gasolio e produttività.',
+      'icon': '🚚',
+      'endpoint': 'manage_drivers.index'
+    },
+    'fatture': {
+      'name': 'Fatture Aziendali',
+      'desc': 'Genera ed esporta le fatture in PDF.',
+      'icon': '🧾',
+      'endpoint': 'fatture.index'
+    },
+    'gestione_magazzino': {
+      'name': 'Gestione Magazzino',
+      'desc': 'Monitora stock, carichi e scarichi.',
+      'icon': '📦',
+      'endpoint': 'gestione_magazzino.index'
+    },
+    'statistiche': {
+      'name': 'Statistiche',
+      'desc': 'Visualizza dati aggregati per analisi mensile/annuale.',
+      'icon': '📈',
+      'endpoint': 'manage_drivers.statistiche'
+    },
+    'grafici': {
+      'name': 'Grafici Interattivi',
+      'desc': 'Consulta grafici interattivi e confronti visivi.',
+      'icon': '📊',
+      'endpoint': 'manage_drivers.grafici'
+    },
+    'clienti': {
+      'name': 'Anagrafica Clienti',
+      'desc': 'Gestione clienti, recapiti e codici fiscali.',
+      'icon': '👥',
+      'endpoint': 'clienti.index'
+    }
+  } %}
+
+  <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4">
+    {% for key, tool in all_tools.items() %}
+      <div class="col">
+        <div class="tool-card h-100">
+          <div class="tool-icon">{{ tool.icon }}</div>
+          <h5 class="mb-2">{{ tool.name }}</h5>
+          <p class="text-muted">{{ tool.desc }}</p>
+          {% if key in pacchetti %}
+            <a href="{{ url_for(tool.endpoint) }}" class="btn btn-outline-primary mt-2">Apri</a>
+          {% else %}
+            <span class="badge badge-disabled mt-2 px-3 py-2">🔒 Solo su abilitazione</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+  <script>
+  particlesJS("particles-js", {
+    "particles": {
+      "number": {
+        "value": 35,
+        "density": {
+          "enable": true,
+          "value_area": 800
+        }
+      },
+      "color": { "value": "#ffffff" },
+      "shape": {
+        "type": "circle",
+        "stroke": { "width": 0, "color": "#000000" },
+      },
+      "opacity": {
+        "value": 0.2,
+        "random": true,
+      },
+      "size": {
+        "value": 3,
+        "random": true,
+      },
+      "move": {
+        "enable": true,
+        "speed": 1.2,
+        "direction": "none",
+        "out_mode": "out"
+      }
+    },
+    "interactivity": {
+      "detect_on": "canvas",
+      "events": {
+        "onhover": { "enable": true, "mode": "repulse" },
+        "onclick": { "enable": false }
+      }
+    },
+    "retina_detect": true
+  });
+  </script>
+  
+
+
+</body>
+</html>

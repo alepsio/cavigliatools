@@ -1,0 +1,52 @@
+{% extends "layouts/base_tool.html" %}
+{% block title %}Report Autisti{% endblock %}
+
+{% block sidebar_sections %}
+<a href="{{ url_for('manage_drivers.index') }}" class="">📋 Inserimento Dati</a>
+<a href="{{ url_for('manage_drivers.report') }}">📊 Report Avanzato</a>
+<a href="{{ url_for('manage_drivers.statistiche') }}">📈 Statistiche</a>
+<a href="{{ url_for('manage_drivers.grafici') }}">📈 Grafici</a>
+<a href="{{ url_for('manage_autisti.index') }}" class="">👤 Anagrafica Autisti</a>
+{% endblock %}
+
+{% block content %}
+<h2>Report Avanzato</h2>
+
+<form method="GET" class="row g-3 mb-4">
+  <div class="col-md-4">
+    <label for="autista">Autista</label>
+    <select name="autista" class="form-select">
+      <option value="">Tutti</option>
+      {% for a in autisti %}
+        <option value="{{ a }}">{{ a }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="col-md-4">
+    <label for="zona">Zona</label>
+    <input type="text" name="zona" class="form-control" placeholder="Inserisci zona">
+  </div>
+  <div class="col-md-4 d-flex align-items-end">
+    <button class="btn btn-primary w-100">Filtra</button>
+  </div>
+</form>
+
+<table class="table table-bordered table-sm">
+  <thead>
+    <tr>
+      <th>Autista</th><th>Giorni</th><th>Totale Materiale</th>
+      <th>Totale Km</th><th>Totale Gasolio</th>
+      <th>Eff. Materiale/Km</th><th>Eff. Km/Litro</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for row in stats %}
+    <tr>
+      {% for val in row %}
+      <td>{{ val }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

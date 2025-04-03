@@ -1,0 +1,18 @@
+<h3>Crea nuovo utente</h3>
+<form method="POST">
+  <label>Username:</label>
+  <input type="text" name="username" required><br>
+  <label>Password:</label>
+  <input type="password" name="password" required><br>
+  <label>Ruolo:</label>
+  <select name="ruolo">
+    <option value="cliente">Cliente</option>
+    <option value="admin">Admin</option>
+  </select><br>
+
+  <label>Pacchetti:</label><br>
+  <input type="checkbox" name="pacchetti" value="manage_drivers"> Manage Drivers<br>
+  <input type="checkbox" name="pacchetti" value="fatture"> Fatture<br>
+
+  <button type="submit">Crea</button>
+</form>

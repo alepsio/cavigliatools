@@ -1,0 +1,95 @@
+{% extends "layouts/base_tool.html" %}
+
+{% block title %}Gestione Autisti{% endblock %}
+
+{% block sidebar_sections %}
+<a href="{{ url_for('manage_drivers.index') }}" class="">📋 Inserimento Dati</a>
+<a href="{{ url_for('manage_drivers.report') }}">📊 Report Avanzato</a>
+<a href="{{ url_for('manage_drivers.statistiche') }}">📈 Statistiche</a>
+<a href="{{ url_for('manage_drivers.grafici') }}">📈 Grafici</a>
+<a href="{{ url_for('manage_autisti.index') }}" class="">👤 Anagrafica Autisti</a>
+{% endblock %}
+
+{% block content %}
+<h2>Gestione Autisti</h2>
+
+<div id="inserimento" class="section active">
+  <form method="POST">
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label for="data" class="form-label">Data</label>
+        <input type="date" name="data" id="data" class="form-control" required>
+      </div>
+      <div class="col-md-6">
+        <label for="nome" class="form-label">Nome Autista</label>
+          <select name="nome_autista" id="nome" class="form-control" required>
+            <option value="">-- Seleziona Autista --</option>
+            {% for a in autisti %}
+              <option value="{{ a }}">{{ a }}</option>
+            {% endfor %}
+          </select>             
+      </div>
+      <div class="col-md-4">
+        <label for="targa" class="form-label">Targa</label>
+          <select name="targa" id="targa" class="form-select" required>
+            <option value="">Seleziona una targa</option>
+            {% for nome, targa in autisti_targhe.items() %}
+              <option value="{{ targa }}">{{ targa }}</option>
+            {% endfor %}
+          </select>
+      </div>
+      <div class="col-md-4">
+        <label for="zona" class="form-label">Zona</label>
+        <input type="text" name="zona" id="zona" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label for="qt_materiale" class="form-label">Qt. Materiale</label>
+        <input type="number" name="qt_materiale" id="qt_materiale" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <label for="lt_gasolio" class="form-label">Lt. Gasolio</label>
+        <input type="number" name="lt_gasolio" id="lt_gasolio" class="form-control" step="0.01" required>
+      </div>
+      <div class="col-md-2">
+        <label for="km_effettuati" class="form-label">Km</label>
+        <input type="number" name="km_effettuati" id="km_effettuati" class="form-control" required>
+      </div>
+    </div>
+    <button class="btn btn-primary">💾 Salva</button>
+  </form>
+</div>
+
+
+<script>
+  const autistiTarghe = "{{ autisti_targhe | tojson | safe }}";
+  const targheAutisti = {};
+
+  // Invertiamo il dizionario per cercare anche da targa → nome
+  for (const [nome, targa] of Object.entries(autistiTarghe)) {
+    targheAutisti[targa] = nome;
+  }
+
+  const nomeSelect = document.getElementById("nome_autista");
+  const targaSelect = document.getElementById("targa");
+
+  nomeSelect.addEventListener("change", function () {
+    const selectedName = this.value;
+    const targaAssociata = autistiTarghe[selectedName];
+
+    if (targaAssociata) {
+      targaSelect.value = targaAssociata;
+    }
+  });
+
+  targaSelect.addEventListener("change", function () {
+    const selectedTarga = this.value;
+    const nomeAssociato = targheAutisti[selectedTarga];
+
+    if (nomeAssociato) {
+      nomeSelect.value = nomeAssociato;
+    }
+  });
+</script>
+
+
+{% endblock %}

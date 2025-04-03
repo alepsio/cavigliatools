@@ -1,0 +1,74 @@
+{% extends "layouts/base_tool.html" %}
+{% block title %}Gestione Autisti{% endblock %}
+
+{% block sidebar_sections %}
+<a href="{{ url_for('manage_drivers.index') }}" class="">📋 Inserimento Dati</a>
+<a href="{{ url_for('manage_drivers.report') }}">📊 Report Avanzato</a>
+<a href="{{ url_for('manage_drivers.statistiche') }}">📈 Statistiche</a>
+<a href="{{ url_for('manage_drivers.grafici') }}">📈 Grafici</a>
+<a href="{{ url_for('manage_autisti.index') }}" class="">👤 Anagrafica Autisti</a>
+{% endblock %}
+
+{% block content %}
+<h2>Anagrafica Autisti</h2>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<div class="card mb-4">
+  <div class="card-header bg-primary text-white">
+    {% if autista_modifica %}✏️ Modifica Autista{% else %}➕ Nuovo Autista{% endif %}
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <input type="hidden" name="autista_id" value="{{ autista_modifica.id if autista_modifica else '' }}">
+      <div class="mb-3">
+        <label for="nome" class="form-label">Nome</label>
+        <input type="text" class="form-control" id="nome" name="nome" required value="{{ autista_modifica.nome if autista_modifica else '' }}">
+      </div>
+      <div class="mb-3">
+        <label for="targa" class="form-label">Targa</label>
+        <input type="text" class="form-control" id="targa" name="targa" required value="{{ autista_modifica.targa if autista_modifica else '' }}">
+      </div>
+      <button type="submit" class="btn btn-success">💾 Salva</button>
+      {% if autista_modifica %}
+        <a href="{{ url_for('manage_autisti.index') }}" class="btn btn-secondary">↩️ Annulla</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header bg-dark text-white">🚛 Autisti Registrati</div>
+  <div class="card-body p-0">
+    <table class="table table-striped table-bordered mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Nome</th>
+          <th>Targa</th>
+          <th style="width: 120px;">Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in autisti %}
+        <tr>
+          <td>{{ a.nome }}</td>
+          <td>{{ a.targa }}</td>
+          <td>
+            <a href="{{ url_for('manage_autisti.index', modifica=a.id) }}" class="btn btn-sm btn-warning">✏️</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "layouts/base_tool.html" %}
+{% block title %}Grafici Autisti{% endblock %}
+
+{% block sidebar_sections %}
+<a href="{{ url_for('manage_drivers.index') }}" class="">📋 Inserimento Dati</a>
+<a href="{{ url_for('manage_drivers.report') }}">📊 Report Avanzato</a>
+<a href="{{ url_for('manage_drivers.statistiche') }}">📈 Statistiche</a>
+<a href="{{ url_for('manage_drivers.grafici') }}">📈 Grafici</a>
+<a href="{{ url_for('manage_autisti.index') }}" class="">👤 Anagrafica Autisti</a>
+{% endblock %}
+
+{% block content %}
+<h2>📊 Grafici di Andamento</h2>
+
+<form method="get" class="mb-4">
+  <label>Tipo di Dato</label>
+  <select name="tipo" class="form-select w-25 d-inline-block">
+    {% for key, label in tipi_disponibili.items() %}
+      <option value="{{ key }}" {% if tipo == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn btn-sm btn-primary">Applica</button>
+</form>
+
+<div class="row">
+  <div class="col-md-12">
+    <div id="line_chart"></div>
+  </div>
+  <div class="col-md-12 mt-4">
+    <div id="bar_chart"></div>
+  </div>
+</div>
+
+<!-- Plotly -->
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script>
+    const line_data = {};
+    let autista;
+    
+    {% for nome, mese, valore in annuali %}
+      autista = '{{ nome }}';
+      if (!line_data[autista]) {
+        line_data[autista] = { x: [], y: [], name: autista };
+      }
+      line_data[autista].x.push(["Gen", "Feb", "Mar", "Apr", "Mag", "Giu", "Lug", "Ago", "Set", "Ott", "Nov", "Dic"][{{ mese|int - 1 }}]);
+      line_data[autista].y.push({{ valore|float }});
+    {% endfor %}
+    
+    const line_traces = Object.values(line_data).map(d => ({
+      x: d.x,
+      y: d.y,
+      type: 'scatter',
+      mode: 'lines+markers',
+      name: d.name
+    }));
+    
+    Plotly.newPlot('line_chart', line_traces, {
+      title: '{{ tipo_label }} - Andamento Annuale',
+      xaxis: { title: 'Mese' },
+      yaxis: { title: '{{ tipo_label }}' },
+      transition: {
+        duration: 1000,
+        easing: 'cubic-in-out'
+      }
+    });
+    
+    // ---- BAR CHART: mese corrente ----
+    
+    const bar_data = [{
+      x: [{% for nome, val in mensili %}'{{ nome }}'{% if not loop.last %}, {% endif %}{% endfor %}],
+      y: [{% for nome, val in mensili %}{{ val|float }}{% if not loop.last %}, {% endif %}{% endfor %}],
+      type: 'bar',
+      marker: { color: 'rgba(26, 118, 255, 0.7)' }
+    }];
+    
+    Plotly.newPlot('bar_chart', bar_data, {
+      title: '{{ tipo_label }} - Mese Corrente',
+      xaxis: { title: 'Autista' },
+      yaxis: { title: '{{ tipo_label }}' },
+      transition: {
+        duration: 800,
+        easing: 'elastic-in-out'
+      }
+    });
+    </script>
+    
+    
+  
+  
+{% endblock %}

@@ -1,0 +1,73 @@
+{% extends "layouts/base_tool.html" %}
+{% block title %}Statistiche Autisti{% endblock %}
+
+{% block sidebar_sections %}
+<a href="{{ url_for('manage_drivers.index') }}" class="">📋 Inserimento Dati</a>
+<a href="{{ url_for('manage_drivers.report') }}">📊 Report Avanzato</a>
+<a href="{{ url_for('manage_drivers.statistiche') }}">📈 Statistiche</a>
+<a href="{{ url_for('manage_drivers.grafici') }}">📈 Grafici</a>
+<a href="{{ url_for('manage_autisti.index') }}" class="">👤 Anagrafica Autisti</a>
+{% endblock %}
+
+{% block content %}
+<h2>📊 Statistiche Autisti</h2>
+
+<!-- 🔍 Filtri -->
+<form method="get" class="row g-3 mb-4">
+  <div class="col-md-3">
+    <label>Mese</label>
+    <select name="mese" class="form-select">
+      <option value="">-- Seleziona Mese --</option>
+      {% for nome in mesi %}
+        {% set idx = loop.index %}
+        <option value="{{ idx }}" {% if filtro_mese|int == idx %}selected{% endif %}>{{ nome }}</option>
+      {% endfor %}
+    
+    </select>
+  </div>
+  <div class="col-md-3">
+    <label>Tipo Statistica</label>
+    <select name="tipo" class="form-select">
+      <option value="qt_materiale" {% if filtro_tipo == 'qt_materiale' %}selected{% endif %}>Kg Materiale</option>
+      <option value="lt_gasolio" {% if filtro_tipo == 'lt_gasolio' %}selected{% endif %}>Lt Gasolio</option>
+      <option value="km_effettuati" {% if filtro_tipo == 'km_effettuati' %}selected{% endif %}>Km Effettuati</option>
+    </select>
+  </div>
+  <div class="col-md-2 align-self-end">
+    <button class="btn btn-primary">Filtra</button>
+  </div>
+</form>
+
+<!-- 📅 Mese selezionato -->
+{% if filtro_mese %}
+<h4 class="mt-4">📅 Mese: {{ mesi[filtro_mese|int -1] }}</h4>
+<table class="table table-striped">
+  <thead>
+    <tr><th>Autista</th><th>Materiale</th><th>Km</th><th>Gasolio</th></tr>
+  </thead>
+  <tbody>
+    {% for r in stats_mese %}
+    <tr><td>{{ r[0] }}</td><td>{{ r[1] }} kg</td><td>{{ r[2] }} km</td><td>{{ r[3] }} lt</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<!-- 📆 Annuale pivot -->
+<h4 class="mt-5">📈 Anno Corrente - {{ filtro_tipo.replace("_", " ").title() }}</h4>
+<table class="table table-bordered">
+  <thead>
+    <tr><th>Autista</th>{% for mese in mesi %}<th>{{ mese[:3] }}</th>{% endfor %}</tr>
+  </thead>
+  <tbody>
+    {% for autista, valori in stats_annuali.items() %}
+    <tr>
+      <td>{{ autista }}</td>
+      {% for v in valori %}
+        <td>{{ v }}</td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
