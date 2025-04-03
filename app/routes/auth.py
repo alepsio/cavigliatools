@@ -39,3 +39,6 @@ def logout():
     flash("Logout effettuato con successo.")
     return redirect(url_for('auth.login'))
 
+@auth_bp.route('/')
+def redirect_root():
+    return redirect(url_for('auth.login'))
