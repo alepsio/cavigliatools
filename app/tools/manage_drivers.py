@@ -24,16 +24,17 @@ def index():
         km_effettuati = request.form['km_effettuati']
 
         cur.execute("""
-            INSERT INTO dati_autisti (data, nome_autista, targa, zona, qt_materiale, lt_gasolio, km_effettuati)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (data, nome_autista, targa, zona, qt_materiale, lt_gasolio, km_effettuati))
+            INSERT INTO dati_autisti (data, nome_autista, targa, zona, qt_materiale, lt_gasolio, km_effettuati, cliente_id)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (data, nome_autista, targa, zona, qt_materiale, lt_gasolio, km_effettuati, session["user_id"],))
+
         conn.commit()
         flash("Dati inseriti correttamente!")
 
-    cur.execute("SELECT * FROM dati_autisti ORDER BY data DESC")
+    cur.execute("SELECT * FROM dati_autisti WHERE cliente_id = %s ORDER BY data DESC", (session["user_id"],))
     records = cur.fetchall()
 
-    cur.execute("SELECT nome, targa FROM autisti")
+    cur.execute("SELECT nome, targa FROM autisti WHERE cliente_id = %s", (session["user_id"],))
     autisti = cur.fetchall()  # list of tuples
     autisti_dict = {nome: targa for nome, targa in autisti}
 
@@ -60,7 +61,7 @@ def index():
 def export_excel():
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT data, nome_autista, targa, zona, qt_materiale, lt_gasolio, km_effettuati FROM dati_autisti ORDER BY data DESC")
+    cur.execute("SELECT data, nome_autista, targa, zona, qt_materiale, lt_gasolio, km_effettuati FROM dati_autisti WHERE cliente_id = %s ORDER BY data DESC", (session["user_id"],))
     rows = cur.fetchall()
     cur.close()
 
@@ -85,7 +86,7 @@ def export_excel():
 def export_pdf():
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("SELECT data, nome_autista, targa, zona, qt_materiale, lt_gasolio, km_effettuati FROM dati_autisti ORDER BY data DESC")
+    cur.execute("SELECT data, nome_autista, targa, zona, qt_materiale, lt_gasolio, km_effettuati FROM dati_autisti where cliente_id = %s ORDER BY data DESC", (session["user_id"],))
     records = cur.fetchall()
     cur.close()
 
@@ -102,14 +103,14 @@ def report():
     conn = get_db()
     cur = conn.cursor()
 
-    cur.execute("SELECT DISTINCT nome_autista FROM dati_autisti")
+    cur.execute("SELECT DISTINCT nome_autista FROM dati_autisti WHERE cliente_id = %s", (session["user_id"],))
     autisti = [row[0] for row in cur.fetchall()]
 
     filtro_autista = request.args.get('autista')
     filtro_zona = request.args.get('zona')
 
-    query = "SELECT * FROM dati_autisti"
-    params = []
+    query = "SELECT * FROM dati_autisti WHERE cliente_id = %s"
+    params = [session["user_id"]]
     conditions = []
 
     if filtro_autista:
@@ -120,8 +121,6 @@ def report():
         conditions.append("zona = %s")
         params.append(filtro_zona)
 
-    if conditions:
-        query += " WHERE " + " AND ".join(conditions)
 
     cur.execute(query, tuple(params))
     dati = cur.fetchall()
@@ -135,9 +134,10 @@ def report():
                ROUND(SUM(qt_materiale)/NULLIF(SUM(km_effettuati),0), 2) AS eff_materiale_per_km,
                ROUND(SUM(km_effettuati)/NULLIF(SUM(lt_gasolio),0), 2) AS eff_km_per_litro
         FROM dati_autisti
+        WHERE cliente_id = %s
         GROUP BY nome_autista
         ORDER BY totale_materiale DESC
-    """)
+    """, (session["user_id"],))
     stats = cur.fetchall()
     cur.close()
 
@@ -174,15 +174,17 @@ def statistiche():
     if filtro_mese:
         cur.execute(f"""
             SELECT nome_autista,
-                   SUM(qt_materiale),
-                   SUM(km_effettuati),
-                   SUM(lt_gasolio)
+                SUM(qt_materiale),
+                SUM(km_effettuati),
+                SUM(lt_gasolio)
             FROM dati_autisti
             WHERE DATE_PART('month', data::date) = %s
-              AND DATE_PART('year', data::date) = DATE_PART('year', CURRENT_DATE)
+            AND DATE_PART('year', data::date) = DATE_PART('year', CURRENT_DATE)
+            AND cliente_id = %s
             GROUP BY nome_autista
             ORDER BY SUM({filtro_tipo}) DESC
-        """, (int(filtro_mese),))
+        """, (int(filtro_mese), session["user_id"],))
+
         stats_mese = cur.fetchall()
 
     # Query annuale pivotata
@@ -192,8 +194,9 @@ def statistiche():
                SUM({filtro_tipo}) AS valore
         FROM dati_autisti
         WHERE DATE_PART('year', data::date) = DATE_PART('year', CURRENT_DATE)
+        AND cliente_id = %s
         GROUP BY nome_autista, mese
-    """)
+    """, (session["user_id"],))
     rows = cur.fetchall()
 
     # Trasforma in dict pivotato: { autista: [val_mese1, val_mese2, ...] }
@@ -238,9 +241,10 @@ def grafici():
                SUM({filtro_tipo})
         FROM dati_autisti
         WHERE DATE_PART('year', data::date) = DATE_PART('year', CURRENT_DATE)
+        AND cliente_id = %s
         GROUP BY nome_autista, mese
         ORDER BY nome_autista, mese
-    """)
+    """, (session["user_id"],))
     annuali = cur.fetchall()
 
     # Dati mensili per barre
@@ -249,9 +253,10 @@ def grafici():
         FROM dati_autisti
         WHERE DATE_PART('month', data::date) = DATE_PART('month', CURRENT_DATE)
           AND DATE_PART('year', data::date) = DATE_PART('year', CURRENT_DATE)
+          AND cliente_id = %s
         GROUP BY nome_autista
         ORDER BY SUM({filtro_tipo}) DESC
-    """)
+    """, (session["user_id"],))
     mensili = cur.fetchall()
 
     cur.close()

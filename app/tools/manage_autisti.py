@@ -20,13 +20,13 @@ def index():
             cur.execute("UPDATE autisti SET nome = %s, targa = %s WHERE id = %s", (nome, targa, autista_id))
             flash("Autista aggiornato con successo", "success")
         else:  # Nuovo
-            cur.execute("INSERT INTO autisti (nome, targa) VALUES (%s, %s)", (nome, targa))
+            cur.execute("INSERT INTO autisti (nome, targa, cliente_id) VALUES (%s, %s, %s)", (nome, targa, session["user_id"]))
             flash("Autista inserito correttamente", "success")
         conn.commit()
         return redirect(url_for("manage_autisti.index"))
 
     # Recupero lista autisti
-    cur.execute("SELECT id, nome, targa FROM autisti ORDER BY nome")
+    cur.execute("SELECT id, nome, targa FROM autisti WHERE cliente_id = %s ORDER BY nome", (session["user_id"],))
     rows = cur.fetchall()
     autisti = [{'id': r[0], 'nome': r[1], 'targa': r[2]} for r in rows]
 
@@ -34,7 +34,7 @@ def index():
     id_da_modificare = request.args.get("modifica")
     autista_modifica = None
     if id_da_modificare:
-        cur.execute("SELECT id, nome, targa FROM autisti WHERE id = %s", (id_da_modificare,))
+        cur.execute("SELECT id, nome, targa FROM autisti WHERE id = %s AND cliente_id = %s", (id_da_modificare, session["user_id"]))
         r = cur.fetchone()
         if r:
             autista_modifica = {'id': r[0], 'nome': r[1], 'targa': r[2]}
