@@ -9,6 +9,8 @@ from .tools.fatture import fatture_bp
 from datetime import timedelta
 from .tools.manage_autisti import manage_autisti_bp
 from .tools.gestione_magazzino import gestione_magazzino_bp
+from app.tools.manage_consulenze import manage_consulenze_bp
+
 
 
 
@@ -25,6 +27,7 @@ def create_app():
     app.permanent_session_lifetime = timedelta(days=7)
     app.register_blueprint(manage_autisti_bp)
     app.register_blueprint(gestione_magazzino_bp)
+    app.register_blueprint(manage_consulenze_bp)
 
 
 
