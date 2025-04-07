@@ -29,6 +29,5 @@ def create_app():
     app.register_blueprint(gestione_magazzino_bp)
     app.register_blueprint(manage_consulenze_bp)
 
-
-
+    
     return app

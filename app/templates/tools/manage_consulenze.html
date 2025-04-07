@@ -1,14 +1,207 @@
 {% extends "layouts/base_tool.html" %}
 
-{% block title %}Consulenze Assicurative{% endblock %}
+{% block title %}Gestione Consulenze Assicurative{% endblock %}
 
 {% block sidebar_sections %}
-<a href="#" class="active-link">🏠 Home</a>
+<a href="{{ url_for('manage_consulenze.index') }}"">👤 Anagrafica Clienti</a>
+<a href="{{ url_for('manage_consulenze.questionari') }}">📝 Questionari PDF</a>
+<a href="#" onclick="showSection('polizze')">📄 Polizze Assicurative</a>
+<a href="#" onclick="showSection('scadenze')">📅 Scadenze e Notifiche</a>
 {% endblock %}
 
 {% block content %}
-<h2>📄 Gestione Consulenze Assicurative</h2>
-<p>Benvenuto! Da qui potrai gestire clienti, assicurazioni e molto altro.</p>
+<h2 class="mb-4">Gestione Consulenze Assicurative</h2>
 
-<div class="alert alert-info">Inizia selezionando una voce dal menù a sinistra.</div>
+
+
+<form action="{{ url_for('manage_consulenze.inserisci_cliente') }}" method="POST" enctype="multipart/form-data">
+    <div class="row g-3">
+  
+      <!-- Identità -->
+      <div class="col-12">
+        <h5 class="mb-2 mt-3 text-primary">👤 Dati Anagrafici</h5>
+      </div>
+  
+      <div class="col-md-6 form-floating">
+        <input type="text" class="form-control" name="nome" placeholder="Cognome e Nome" required>
+        <label>Cognome e Nome</label>
+      </div>
+  
+      <div class="col-md-3 form-floating">
+        <input type="date" class="form-control" name="data_nascita" required>
+        <label>Data di nascita</label>
+      </div>
+  
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="luogo_nascita" placeholder="Luogo di nascita">
+        <label>Luogo di nascita</label>
+      </div>
+  
+      <div class="col-md-6 form-floating">
+        <input type="text" class="form-control" name="codice_fiscale" placeholder="Codice Fiscale" required>
+        <label>Codice Fiscale</label>
+      </div>
+  
+      <div class="col-md-6 form-floating">
+        <input type="text" class="form-control" name="partita_iva" placeholder="Partita IVA">
+        <label>Partita IVA</label>
+      </div>
+  
+      <!-- Lavoro e Iscrizioni -->
+      <div class="col-12">
+        <h5 class="mb-2 mt-4 text-primary">💼 Dati Professionali</h5>
+      </div>
+  
+      <div class="col-md-6 form-floating">
+        <input type="text" class="form-control" name="attivita" placeholder="Attività Professionale">
+        <label>Attività Professionale</label>
+      </div>
+  
+      <div class="col-md-3 form-floating">
+        <input type="date" class="form-control" name="inizio_attivita">
+        <label>Data Inizio Attività</label>
+      </div>
+  
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="num_albo" placeholder="Numero Albo">
+        <label>N° Iscrizione Albo</label>
+      </div>
+  
+      <div class="col-md-3 form-floating">
+        <input type="date" class="form-control" name="data_albo">
+        <label>Data Iscrizione Albo</label>
+      </div>
+  
+      <!-- Contatti -->
+      <div class="col-12">
+        <h5 class="mb-2 mt-4 text-primary">📬 Contatti e Sedi</h5>
+      </div>
+  
+      <div class="col-md-4 form-floating">
+        <input type="text" class="form-control" name="residenza" placeholder="Residenza">
+        <label>Residenza</label>
+      </div>
+  
+      <div class="col-md-4 form-floating">
+        <input type="text" class="form-control" name="domicilio" placeholder="Domicilio">
+        <label>Domicilio Fiscale</label>
+      </div>
+  
+      <div class="col-md-4 form-floating">
+        <input type="text" class="form-control" name="ubicazione" placeholder="Ubicazione Studio">
+        <label>Ubicazione Studio</label>
+      </div>
+  
+      <div class="col-md-6 form-floating">
+        <label for="email" class="form-label">Email</label>
+        <input type="email" class="form-control" id="email" name="email" placeholder="email@example.com">
+      </div>
+
+      <div class="col-md-6 form-floating">
+        <input type="email" class="form-control" name="pec" placeholder="PEC">
+        <label>PEC</label>
+      </div>
+  
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="codice_univoco" placeholder="Codice Univoco">
+        <label>Codice Univoco</label>
+      </div>
+  
+      <div class="col-md-3 form-floating">
+        <input type="tel" class="form-control" name="cellulare" placeholder="Cellulare">
+        <label>Cellulare</label>
+      </div>
+  
+      <!-- Documenti -->
+      <div class="col-12">
+        <h5 class="mb-2 mt-4 text-primary">📎 Documenti</h5>
+      </div>
+  
+      <div class="col-md-4">
+        <label>Documento Identità (fronte)</label>
+        <input type="file" name="doc_fronte" class="form-control">
+      </div>
+  
+      <div class="col-md-4">
+        <label>Documento Identità (retro)</label>
+        <input type="file" name="doc_retro" class="form-control">
+      </div>
+  
+      <div class="col-md-4">
+        <label>Precedenti Assicurativi?</label>
+        <input type="file" name="polizza_precedente" class="form-control">
+      </div>
+  
+      <!-- Fatturati e Personale -->
+      <div class="col-12">
+        <h5 class="mb-2 mt-4 text-primary">📊 Attività</h5>
+      </div>
+  
+      <div class="col-md-6 form-floating">
+        <input type="number" class="form-control" name="fatturato_2024" placeholder="Fatturato 2024">
+        <label>Fatturato 2024</label>
+      </div>
+  
+      <div class="col-md-6 form-floating">
+        <input type="number" class="form-control" name="fatturato_2025" placeholder="Fatturato Stima 2025">
+        <label>Fatturato Stima 2025</label>
+      </div>
+  
+      <div class="col-md-4 form-floating">
+        <select class="form-select" name="dipendenti">
+          <option value="No">No</option><option value="Sì">Sì</option>
+        </select>
+        <label>Personale Dipendente</label>
+      </div>
+  
+      <div class="col-md-4 form-floating">
+        <select class="form-select" name="addetti">
+          <option value="No">No</option><option value="Sì">Sì</option>
+        </select>
+        <label>Addetti</label>
+      </div>
+  
+      <div class="col-md-4 form-floating">
+        <select class="form-select" name="subappaltatori">
+          <option value="No">No</option><option value="Sì">Sì</option>
+        </select>
+        <label>Subappaltatori</label>
+      </div>
+  
+      <!-- Bottone -->
+      <div class="col-12 mt-4">
+        <button type="submit" class="btn btn-primary px-4">
+          💾 Salva Cliente
+        </button>
+      </div>
+    </div>
+  </form>
+  
+  
+<div id="questionario" class="section" style="display: none;">
+<p>⚙️ Area dedicata alla generazione e compilazione automatica dei PDF questionari cliente.</p>
+</div>
+
+
+
+
+<div id="polizze" class="section" style="display: none;">
+  <p>⚙️ Qui si gestiranno le polizze da associare ai clienti (RCA, Vita, Infortuni, ecc).</p>
+</div>
+
+
+
+<div id="scadenze" class="section" style="display: none;">
+  <p>⚙️ In questa sezione verranno mostrate le scadenze future e impostate le email automatiche.</p>
+</div>
+
+<script>
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+  document.getElementById(id).style.display = 'block';
+
+  document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active-link'));
+  event.target.classList.add('active-link');
+}
+</script>
 {% endblock %}
