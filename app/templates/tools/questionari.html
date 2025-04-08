@@ -1,9 +1,10 @@
 {% extends "layouts/base_tool.html" %}
 
-{% block title %}Compilazione Questionario PDF{% endblock %}
+{% block title %}📝 Questionari PDF{% endblock %}
 
 {% block sidebar_sections %}
-<a href="{{ url_for('manage_consulenze.index') }}"">👤 Anagrafica Clienti</a>
+<a href="{{ url_for('manage_consulenze.index') }}">👤 Anagrafica Clienti</a>
+<a href="{{ url_for('manage_consulenze.panoramica') }}">📊 Panoramica Clienti</a>
 <a href="{{ url_for('manage_consulenze.questionari') }}">📝 Questionari PDF</a>
 <a href="#" onclick="showSection('polizze')">📄 Polizze Assicurative</a>
 <a href="#" onclick="showSection('scadenze')">📅 Scadenze e Notifiche</a>
@@ -12,79 +13,108 @@
 {% block content %}
 <h2 class="mb-4">📄 Compilazione Questionario PDF</h2>
 
-<form method="POST" action="">
+<!-- Form Questionario -->
+<form method="POST" action="{{ url_for('manage_consulenze.genera_questionario') }}">
   <div class="row g-3 mb-4">
 
-    <!-- Cliente -->
+    <!-- Cliente con ricerca -->
     <div class="col-md-6">
       <label for="cliente_id" class="form-label">Seleziona Cliente</label>
       <select class="form-select" name="cliente_id" id="cliente_id" required>
+        <option value="">-- Cerca cliente --</option>
         {% for cliente in clienti %}
-          <option value="{{ cliente.id }}">{{ cliente.nome }}</option>
+          <option value="{{ cliente.id }}">{{ cliente.cognome }} {{ cliente.nome }} - {{ cliente.codice_fiscale }}</option>
         {% endfor %}
       </select>
     </div>
 
-    <!-- Template PDF -->
-    <div class="col-md-6 d-flex align-items-end">
-      <div class="w-100">
-        <label for="template_pdf" class="form-label">Seleziona Template Questionario</label>
-        <div class="input-group">
-          <select class="form-select" name="template_pdf" id="template_pdf" required>
-            {% for template in templates %}
-              <option value="{{ template.filename }}">{{ template.nome }}</option>
-            {% endfor %}
-          </select>
-          <button type="button" class="btn btn-outline-success" id="addTemplateBtn">+</button>
-        </div>
+    <!-- Template con aggiunta -->
+    <div class="col-md-6">
+      <label for="template_pdf" class="form-label">Template PDF</label>
+      <div class="input-group">
+        <select class="form-select" name="template_pdf" id="template_pdf" required>
+          {% for template in templates %}
+            <option value="{{ template.filename }}">{{ template.nome }}</option>
+          {% endfor %}
+        </select>
+        <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalAggiungiTemplate">+</button>
       </div>
     </div>
   </div>
 
   <!-- Checkbox FLAG -->
   <div class="mb-4">
-    <label class="form-label">Flag da includere nel PDF:</label>
+    <label class="form-label">✔️ Seleziona flag da inserire nel questionario:</label>
+    {% for i in range(1, 6) %}
     <div class="form-check">
-      <input class="form-check-input" type="checkbox" name="flag_1" id="flag_1">
-      <label class="form-check-label" for="flag_1">Ha già un'assicurazione attiva</label>
+      <input class="form-check-input" type="checkbox" name="flag_{{ i }}" id="flag_{{ i }}">
+      <label class="form-check-label" for="flag_{{ i }}">
+        Flag {{ i }} - descrizione personalizzabile
+      </label>
     </div>
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" name="flag_2" id="flag_2">
-      <label class="form-check-label" for="flag_2">Richiede copertura per danni a terzi</label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" name="flag_3" id="flag_3">
-      <label class="form-check-label" for="flag_3">Dichiara attività autonoma</label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" name="flag_4" id="flag_4">
-      <label class="form-check-label" for="flag_4">Vuole includere collaboratori</label>
-    </div>
-    <div class="form-check">
-      <input class="form-check-input" type="checkbox" name="flag_5" id="flag_5">
-      <label class="form-check-label" for="flag_5">Richiede consulenza legale</label>
-    </div>
+    {% endfor %}
   </div>
 
+  <!-- Genera PDF -->
   <button type="submit" class="btn btn-primary">📥 Genera PDF</button>
 </form>
 
+<!-- PDF Preview -->
 <hr class="my-5">
-
-<!-- Anteprima PDF -->
 <div id="preview_pdf_section" class="mt-4">
   <h4>🔍 Anteprima PDF Generato:</h4>
   {% if pdf_url %}
     <iframe src="{{ pdf_url }}" width="100%" height="600px" style="border:1px solid #ccc;"></iframe>
+
+    <div class="mt-3 d-flex gap-3">
+      <a href="" class="btn btn-success">📩 Invia Questionario</a>
+      <a href="" class="btn btn-secondary">⬇️ Scarica Questionario</a>
+    </div>
   {% else %}
     <p class="text-muted">Nessun PDF ancora generato.</p>
   {% endif %}
 </div>
 
+<!-- Modal Aggiunta Template -->
+<div class="modal fade" id="modalAggiungiTemplate" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <form method="POST" action="{{ url_for('manage_consulenze.upload_template') }}" enctype="multipart/form-data" class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="modalLabel">📁 Aggiungi nuovo template PDF</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label for="nome_template" class="form-label">Nome Template</label>
+          <input type="text" class="form-control" name="nome_template" required>
+        </div>
+        <div class="mb-3">
+          <label for="file_template" class="form-label">File PDF</label>
+          <input type="file" class="form-control" name="file_template" accept="application/pdf" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-success">📤 Carica</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+
+<!-- Select2 -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 <script>
-  document.getElementById("addTemplateBtn").addEventListener("click", function () {
-    alert("Funzionalità 'Aggiungi Template' in arrivo 🔧");
-    // TODO: Apri modale per caricare nuovo template PDF con campi acrofield
+  document.addEventListener("DOMContentLoaded", function () {
+    $('#cliente_id').select2({
+      theme: "bootstrap-5",
+      placeholder: "Seleziona cliente...",
+      width: '100%'
+    });
   });
 </script>
 {% endblock %}

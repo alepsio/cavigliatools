@@ -1,0 +1,199 @@
+{% extends "layouts/base_tool.html" %}
+
+{% block title %}📊 Panoramica Clienti{% endblock %}
+
+{% block sidebar_sections %}
+<a href="{{ url_for('manage_consulenze.index') }}"">👤 Anagrafica Clienti</a>
+<a href="{{ url_for('manage_consulenze.panoramica') }}">📊 Panoramica Clienti</a>
+<a href="{{ url_for('manage_consulenze.questionari') }}">📝 Questionari PDF</a>
+<a href="#" onclick="showSection('polizze')">📄 Polizze Assicurative</a>
+<a href="#" onclick="showSection('scadenze')">📅 Scadenze e Notifiche</a>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📋 Elenco Clienti Registrati</h2>
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+
+<form method="GET" class="row g-3 mb-4 align-items-end">
+    <div class="col-md-4">
+      <label for="campo" class="form-label">Filtro per:</label>
+      <select name="campo" id="campo" class="form-select">
+        <option value="">Seleziona campo...</option>
+        <option value="nome" {% if request.args.get('campo') == 'nome' %}selected{% endif %}>Nome</option>
+        <option value="cognome" {% if request.args.get('campo') == 'cognome' %}selected{% endif %}>Cognome</option>
+        <option value="codice_fiscale" {% if request.args.get('campo') == 'codice_fiscale' %}selected{% endif %}>Codice Fiscale</option>
+        <option value="partita_iva" {% if request.args.get('campo') == 'partita_iva' %}selected{% endif %}>Partita IVA</option>
+        <option value="attivita" {% if request.args.get('campo') == 'attivita' %}selected{% endif %}>Attività</option>
+        <option value="email" {% if request.args.get('campo') == 'email' %}selected{% endif %}>Email</option>
+        <option value="cellulare" {% if request.args.get('campo') == 'cellulare' %}selected{% endif %}>Cellulare</option>
+        <option value="dipendenti" {% if request.args.get('campo') == 'dipendenti' %}selected{% endif %}>Dipendenti</option>
+        <option value="fatturato_2024" {% if request.args.get('campo') == 'fatturato_2024' %}selected{% endif %}>Fatturato 2024</option>
+        <option value="fatturato_2025" {% if request.args.get('campo') == 'fatturato_2025' %}selected{% endif %}>Fatturato 2025</option>
+      </select>
+    </div>
+  
+    <div class="col-md-6">
+      <label for="valore" class="form-label">Valore da cercare:</label>
+      <input type="text" class="form-control" name="valore" id="valore" value="{{ request.args.get('valore', '') }}" placeholder="Inserisci valore..." required>
+    </div>
+  
+    <div class="col-md-2 d-grid gap-2">
+      <button type="submit" class="btn btn-primary">🔍 Filtra</button>
+      <a href="{{ url_for('manage_consulenze.panoramica') }}" class="btn btn-secondary">✖️ Reset</a>
+    </div>
+  </form>
+  
+
+<div class="table-responsive" style="overflow-x: auto;">
+    <style>
+        td, th {
+          white-space: nowrap;
+        }
+      </style>
+
+    <table id="clientiTable" class="table table-bordered table-striped" style="min-width: 1500px;">
+      <thead class="table-dark">
+        <tr>
+          <th>Azioni</th>
+          <th>Nome</th>
+          <th>Cognome</th>
+          <th>Data Nascita</th>
+          <th>Luogo Nascita</th>
+          <th>Codice Fiscale</th>
+          <th>Partita IVA</th>
+          <th>Attività</th>
+          <th>Email</th>
+          <th>PEC</th>
+          <th>Cellulare</th>
+          <th>Residenza</th>
+          <th>Domicilio</th>
+          <th>Studio</th>
+          <th>Inizio Attività</th>
+          <th>Data Albo</th>
+          <th>Num. Albo</th>
+          <th>Fatturato 2024</th>
+          <th>Fatturato 2025</th>
+          <th>Dipendenti</th>
+          <th>Addetti</th>
+          <th>Subappaltatori</th>
+          <th>Cod. Univoco</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in clienti %}
+        <tr data-id="{{ c.id }}">
+          <td><button class="btn btn-sm btn-danger delete-btn">❌</button></td>
+          <td class="editable" data-field="nome">{{ c.nome }}</td>
+          <td class="editable" data-field="cognome">{{ c.cognome }}</td>
+          <td class="editable" data-field="data_nascita">{{ c.data_nascita }}</td>
+          <td class="editable" data-field="luogo_nascita">{{ c.luogo_nascita }}</td>
+          <td class="editable" data-field="codice_fiscale">{{ c.codice_fiscale }}</td>
+          <td class="editable" data-field="partita_iva">{{ c.partita_iva }}</td>
+          <td class="editable" data-field="attivita">{{ c.attivita }}</td>
+          <td class="editable" data-field="email">{{ c.email }}</td>
+          <td class="editable" data-field="pec">{{ c.pec }}</td>
+          <td class="editable" data-field="cellulare">{{ c.cellulare }}</td>
+          <td class="editable" data-field="residenza">{{ c.residenza }}</td>
+          <td class="editable" data-field="domicilio">{{ c.domicilio }}</td>
+          <td class="editable" data-field="ubicazione">{{ c.ubicazione }}</td>
+          <td class="editable" data-field="inizio_attivita">{{ c.inizio_attivita }}</td>
+          <td class="editable" data-field="data_albo">{{ c.data_albo }}</td>
+          <td class="editable" data-field="num_albo">{{ c.num_albo }}</td>
+          <td class="editable" data-field="fatturato_2024">{{ c.fatturato_2024 }}</td>
+          <td class="editable" data-field="fatturato_2025">{{ c.fatturato_2025 }}</td>
+          <td class="editable" data-field="dipendenti">{{ c.dipendenti }}</td>
+          <td class="editable" data-field="addetti">{{ c.addetti }}</td>
+          <td class="editable" data-field="subappaltatori">{{ c.subappaltatori }}</td>
+          <td class="editable" data-field="codice_univoco">{{ c.codice_univoco }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+
+  // ✏️ MODIFICA CELLA
+  document.querySelectorAll('.editable').forEach(cell => {
+    cell.addEventListener('dblclick', () => {
+      const valoreAttuale = cell.innerText;
+      const campo = cell.dataset.field;
+      const riga = cell.closest('tr');
+      const id = riga.dataset.id;
+
+      Swal.fire({
+        title: `Modifica ${campo}`,
+        input: 'text',
+        inputValue: valoreAttuale,
+        showCancelButton: true,
+        confirmButtonText: '💾 Salva',
+        cancelButtonText: 'Annulla',
+        inputValidator: (value) => {
+          if (!value) return 'Il campo non può essere vuoto';
+        }
+      }).then(result => {
+        if (result.isConfirmed) {
+          fetch(`/manage_consulenze/modifica_campo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, campo: campo, valore: result.value })
+          })
+          .then(r => r.json())
+          .then(data => {
+            if (data.success) {
+              cell.innerText = result.value;
+              Swal.fire('✅ Modificato', '', 'success');
+            } else {
+              Swal.fire('Errore', data.message || 'Errore generico', 'error');
+            }
+          });
+        }
+      });
+    });
+  });
+
+  // ❌ CANCELLA CLIENTE
+  document.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tr = btn.closest('tr');
+      const id = tr.dataset.id;
+
+      Swal.fire({
+        title: 'Sei sicuro?',
+        text: "Questa azione è irreversibile!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#aaa',
+        confirmButtonText: 'Sì, elimina!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          fetch(`/manage_consulenze/elimina_cliente/${id}`, { method: 'POST' })
+            .then(r => r.json())
+            .then(data => {
+              if (data.success) {
+                tr.remove();
+                Swal.fire('✅ Cliente eliminato', '', 'success');
+              } else {
+                Swal.fire('Errore', data.message || 'Errore generico', 'error');
+              }
+            });
+        }
+      });
+    });
+  });
+});
+</script>
+
+
+{% endblock %}

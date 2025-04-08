@@ -4,6 +4,7 @@
 
 {% block sidebar_sections %}
 <a href="{{ url_for('manage_consulenze.index') }}"">👤 Anagrafica Clienti</a>
+<a href="{{ url_for('manage_consulenze.panoramica') }}">📊 Panoramica Clienti</a>
 <a href="{{ url_for('manage_consulenze.questionari') }}">📝 Questionari PDF</a>
 <a href="#" onclick="showSection('polizze')">📄 Polizze Assicurative</a>
 <a href="#" onclick="showSection('scadenze')">📅 Scadenze e Notifiche</a>
@@ -14,7 +15,7 @@
 
 
 
-<form action="{{ url_for('manage_consulenze.inserisci_cliente') }}" method="POST" enctype="multipart/form-data">
+<form action="{{ url_for('manage_consulenze.salva_cliente') }}" method="POST" enctype="multipart/form-data">
     <div class="row g-3">
   
       <!-- Identità -->
@@ -22,10 +23,15 @@
         <h5 class="mb-2 mt-3 text-primary">👤 Dati Anagrafici</h5>
       </div>
   
-      <div class="col-md-6 form-floating">
-        <input type="text" class="form-control" name="nome" placeholder="Cognome e Nome" required>
-        <label>Cognome e Nome</label>
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="cognome" placeholder="Cognome" required>
+        <label>Cognome</label>
       </div>
+      
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="nome" placeholder="Nome" required>
+        <label>Nome</label>
+      </div>      
   
       <div class="col-md-3 form-floating">
         <input type="date" class="form-control" name="data_nascita" required>
@@ -76,25 +82,49 @@
       <div class="col-12">
         <h5 class="mb-2 mt-4 text-primary">📬 Contatti e Sedi</h5>
       </div>
-  
-      <div class="col-md-4 form-floating">
-        <input type="text" class="form-control" name="residenza" placeholder="Residenza">
-        <label>Residenza</label>
+
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="residenza" placeholder="Via/Piazza">
+        <label>Indirizzo Residenza</label>
       </div>
-  
-      <div class="col-md-4 form-floating">
-        <input type="text" class="form-control" name="domicilio" placeholder="Domicilio">
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="comune_residenza" placeholder="Comune">
+        <label>Comune Residenza</label>
+      </div>
+      <div class="col-md-2 form-floating">
+        <input type="text" class="form-control" name="cap_residenza" placeholder="CAP">
+        <label>CAP Residenza</label>
+      </div>
+
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="domicilio" placeholder="Via/Piazza">
         <label>Domicilio Fiscale</label>
       </div>
-  
-      <div class="col-md-4 form-floating">
-        <input type="text" class="form-control" name="ubicazione" placeholder="Ubicazione Studio">
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="comune_domicilio" placeholder="Comune">
+        <label>Comune Domicilio</label>
+      </div>
+      <div class="col-md-2 form-floating">
+        <input type="text" class="form-control" name="cap_domicilio" placeholder="CAP">
+        <label>CAP Domicilio</label>
+      </div>
+
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="ubicazione" placeholder="Via/Piazza">
         <label>Ubicazione Studio</label>
       </div>
-  
+      <div class="col-md-3 form-floating">
+        <input type="text" class="form-control" name="comune_studio" placeholder="Comune">
+        <label>Comune Studio</label>
+      </div>
+      <div class="col-md-2 form-floating">
+        <input type="text" class="form-control" name="cap_studio" placeholder="CAP">
+        <label>CAP Studio</label>
+      </div>
+
       <div class="col-md-6 form-floating">
         <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" name="email" placeholder="email@example.com">
+        <input type="email" class="form-control" id="email" name="email" placeholder="email@example.com" required>
       </div>
 
       <div class="col-md-6 form-floating">
@@ -108,7 +138,7 @@
       </div>
   
       <div class="col-md-3 form-floating">
-        <input type="tel" class="form-control" name="cellulare" placeholder="Cellulare">
+        <input type="tel" class="form-control" name="cellulare" placeholder="Cellulare" required>
         <label>Cellulare</label>
       </div>
   
@@ -127,10 +157,15 @@
         <input type="file" name="doc_retro" class="form-control">
       </div>
   
-      <div class="col-md-4">
-        <label>Precedenti Assicurativi?</label>
-        <input type="file" name="polizza_precedente" class="form-control">
+      <div class="col-md-6 form-floating">
+        <input type="text" class="form-control" name="compagnia_precedente" placeholder="Compagnia">
+        <label>Compagnia Assicurativa Precedente</label>
       </div>
+      
+      <div class="col-md-6">
+        <label>Polizza Assicurativa Precedente (PDF)</label>
+        <input type="file" name="polizza_precedente" class="form-control">
+      </div>      
   
       <!-- Fatturati e Personale -->
       <div class="col-12">
@@ -167,6 +202,36 @@
         </select>
         <label>Subappaltatori</label>
       </div>
+
+      <div class="col-md-4 form-floating">
+        <select class="form-select" name="collaboratori">
+          <option value="No">No</option><option value="Sì">Sì</option>
+        </select>
+        <label>Altri Collaboratori</label>
+      </div>
+      
+      <div class="col-md-4 form-floating">
+        <select class="form-select" name="sedi_estere">
+          <option value="No">No</option><option value="Sì">Sì</option>
+        </select>
+        <label>Sedi Estere</label>
+      </div>
+      
+      <div class="col-md-4 form-floating">
+        <select class="form-select" name="clienti_estero">
+          <option value="No">No</option><option value="Sì">Sì</option>
+        </select>
+        <label>Clienti Esteri</label>
+      </div>
+      
+      <div class="col-md-4 form-floating">
+        <select class="form-select" name="fornitori_estero">
+          <option value="No">No</option><option value="Sì">Sì</option>
+        </select>
+        <label>Fornitori Esteri</label>
+      </div>
+      
+      
   
       <!-- Bottone -->
       <div class="col-12 mt-4">
