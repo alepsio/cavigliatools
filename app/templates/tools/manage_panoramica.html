@@ -2,12 +2,12 @@
 
 {% block title %}📊 Panoramica Clienti{% endblock %}
 
+
 {% block sidebar_sections %}
-<a href="{{ url_for('manage_consulenze.index') }}"">👤 Anagrafica Clienti</a>
-<a href="{{ url_for('manage_consulenze.panoramica') }}">📊 Panoramica Clienti</a>
+<a href="{{ url_for('manage_consulenze.index') }}">👤 Anagrafica Clienti</a>
+<a href="{{ url_for('manage_consulenze.panoramica') }}">📊 Panoramica</a>
 <a href="{{ url_for('manage_consulenze.questionari') }}">📝 Questionari PDF</a>
-<a href="#" onclick="showSection('polizze')">📄 Polizze Assicurative</a>
-<a href="#" onclick="showSection('scadenze')">📅 Scadenze e Notifiche</a>
+<a href="{{ url_for('manage_consulenze.gestione_email') }}" class="">📨 Configurazione Email</a>
 {% endblock %}
 
 {% block content %}
@@ -36,10 +36,20 @@
         <option value="fatturato_2025" {% if request.args.get('campo') == 'fatturato_2025' %}selected{% endif %}>Fatturato 2025</option>
       </select>
     </div>
+
+    <div class="col-md-3">
+      <label for="questionario_inviato" class="form-label">Questionario Inviato</label>
+      <select name="questionario_inviato" id="questionario_inviato" class="form-select">
+        <option value="">Tutti</option>
+        <option value="1" {% if request.args.get('questionario_inviato') == '1' %}selected{% endif %}>✅ Inviato</option>
+        <option value="0" {% if request.args.get('questionario_inviato') == '0' %}selected{% endif %}>❌ Non Inviato</option>
+      </select>
+    </div>
+    
   
-    <div class="col-md-6">
+    <div class="col-md-3">
       <label for="valore" class="form-label">Valore da cercare:</label>
-      <input type="text" class="form-control" name="valore" id="valore" value="{{ request.args.get('valore', '') }}" placeholder="Inserisci valore..." required>
+      <input type="text" class="form-control" name="valore" id="valore" value="{{ request.args.get('valore', '') }}" placeholder="Inserisci valore..." >
     </div>
   
     <div class="col-md-2 d-grid gap-2">
@@ -60,6 +70,7 @@
       <thead class="table-dark">
         <tr>
           <th>Azioni</th>
+          <th>Stato Questionario</th>
           <th>Nome</th>
           <th>Cognome</th>
           <th>Data Nascita</th>
@@ -88,6 +99,20 @@
         {% for c in clienti %}
         <tr data-id="{{ c.id }}">
           <td><button class="btn btn-sm btn-danger delete-btn">❌</button></td>
+
+          <td>
+            {% if c.questionario_inviato %}
+              <a href="{{ url_for('static', filename='pdf_generati/questionario_' + c.id|string + '.pdf') }}" 
+                target="_blank" 
+                class="btn btn-sm btn-outline-success">
+                ✅ {{ c.nome_questionario_inviato }}
+              </a>
+            {% else %}
+              ❌
+            {% endif %}
+          </td>
+
+            
           <td class="editable" data-field="nome">{{ c.nome }}</td>
           <td class="editable" data-field="cognome">{{ c.cognome }}</td>
           <td class="editable" data-field="data_nascita">{{ c.data_nascita }}</td>

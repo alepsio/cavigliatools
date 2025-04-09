@@ -1,9 +1,11 @@
-from flask import Blueprint, render_template, session, request, flash, redirect, url_for, jsonify
+from flask import Blueprint, render_template, session, request, flash, redirect, url_for, jsonify, send_file
 from app.routes.decorators import has_package
 from app.db import get_db
 from werkzeug.utils import secure_filename
 from PyPDF2 import PdfReader, PdfWriter
 from werkzeug.utils import secure_filename
+import smtplib
+from email.message import EmailMessage
 import os
 from datetime import datetime
 
@@ -211,14 +213,14 @@ def genera_questionario():
 
     # Acrofield da compilare
     dati = {
-        "cognome": safe(cliente[2]),
-        "nome": safe(cliente[3]),
-        "cf": safe(cliente[7]),
+        "cognome": safe(cliente[3]),
+        "nome": safe(cliente[2]),
+        "cf": safe(cliente[6]),
         "sesso": "",  # non presente nell'anagrafica
-        "data_nascita": format_date(cliente[5]),
-        "luogo_nascita": safe(cliente[6]),
+        "data_nascita": format_date(cliente[4]),
+        "luogo_nascita": safe(cliente[5]),
         "prov_nascita": "",  # non presente
-        "nazione": "",
+        "nazione": "ITALIA",
 
         "comune_domicilio": safe(cliente[12]),  # domicilio
         "cap_domicilio": "",
@@ -227,7 +229,7 @@ def genera_questionario():
 
         "telefono": "",  # non usato
         "cellulare": safe(cliente[10]),
-        "email": safe(cliente[8]),
+        "email": safe(cliente[15]),
         "pec": safe(cliente[9]),
 
         "att_prof": safe(cliente[7]),
@@ -236,7 +238,7 @@ def genera_questionario():
 
         # Azienda
         "denominazione": "",
-        "piva_azienda": safe(cliente[6]),
+        "piva_azienda": safe(cliente[7]),
         "cita_azienda": "",
         "cap_azienda": "",
         "prov_azienda": "",
@@ -261,6 +263,9 @@ def genera_questionario():
     with open(output_path, "wb") as f:
         writer.write(f)
 
+    session["last_questionario_template"] = template_file
+
+
     # Mostra anteprima
     pdf_url = f"/static/pdf_generati/questionario_{cliente_id}.pdf"
     return render_template("tools/questionari.html",
@@ -275,8 +280,6 @@ def genera_questionario():
             "manage_drivers": "manage_drivers.index",
         }
     )
-
-
 
 @manage_consulenze_bp.route('/salva_cliente', methods=['POST'])
 @has_package("manage_consulenze")
@@ -366,11 +369,17 @@ def panoramica():
                partita_iva, attivita, email, pec, cellulare, residenza,
                domicilio, ubicazione, inizio_attivita, data_albo, num_albo,
                fatturato_2024, fatturato_2025, dipendenti, addetti,
-               subappaltatori, codice_univoco
+               subappaltatori, codice_univoco, questionario_inviato, nome_questionario_inviato
         FROM clienti_assicurativi
         WHERE cliente_id = %s
     """
     params = [session["user_id"]]
+
+    questionario_inviato = request.args.get("questionario_inviato")
+
+    if questionario_inviato in ("0", "1"):
+        base_query += " AND questionario_inviato = %s"
+        params.append(bool(int(questionario_inviato)))
 
     if campo and valore:
         if campo in ['fatturato_2024', 'fatturato_2025']:
@@ -432,3 +441,131 @@ def elimina_cliente(id):
         return jsonify({"success": False, "message": str(e)})
     finally:
         cur.close()
+
+@manage_consulenze_bp.route('/gestione_email', methods=['GET', 'POST'])
+@has_package("manage_consulenze")
+def gestione_email():
+    conn = get_db()
+    cur = conn.cursor()
+
+    if request.method == "POST":
+        smtp_server = request.form.get("smtp_server")
+        smtp_port = request.form.get("smtp_port")
+        email_mittente = request.form.get("email_mittente")
+        password_mittente = request.form.get("password_mittente")
+        testo = request.form.get("testo_predefinito")
+
+        # Controlla se esiste già la config per il cliente
+        cur.execute("SELECT id FROM config_email WHERE cliente_id = %s", (session["user_id"],))
+        esiste = cur.fetchone()
+
+        if esiste:
+            cur.execute("""
+                UPDATE config_email
+                SET smtp_server=%s, smtp_port=%s, email_mittente=%s, password_mittente=%s, testo_predefinito=%s
+                WHERE cliente_id=%s
+            """, (smtp_server, smtp_port, email_mittente, password_mittente, testo, session["user_id"]))
+        else:
+            cur.execute("""
+                INSERT INTO config_email (cliente_id, smtp_server, smtp_port, email_mittente, password_mittente, testo_predefinito)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (session["user_id"], smtp_server, smtp_port, email_mittente, password_mittente, testo))
+
+        conn.commit()
+        flash("✅ Configurazione email salvata con successo", "success")
+
+    # Carica valori esistenti
+    cur.execute("SELECT * FROM config_email WHERE cliente_id = %s", (session["user_id"],))
+    config = cur.fetchone()
+    cur.close()
+
+    return render_template("tools/config_email.html",
+        config=config,
+        current_tool="manage_consulenze",
+        current_tool_name="💼 Gestione Consulenze",
+        user_tools=session.get("pacchetti", []),
+        tool_routes={
+            "manage_consulenze": "manage_consulenze.index",
+            "manage_drivers": "manage_drivers.index",
+        }
+    )
+
+@manage_consulenze_bp.route('/invia_questionario/<int:cliente_id>', methods=['POST'])
+@has_package("manage_consulenze")
+def invia_questionario(cliente_id):
+
+    template_file = session.get("last_questionario_template")
+
+
+    conn = get_db()
+    cur = conn.cursor()
+
+    # Carica configurazione SMTP personalizzata
+    cur.execute("SELECT smtp_server, smtp_port, email_mittente, password_mittente, testo_predefinito FROM config_email WHERE cliente_id = %s", (session["user_id"],))
+    config = cur.fetchone()
+
+    if not config:
+        flash("⚠️ Nessuna configurazione email trovata", "danger")
+        return redirect(url_for("manage_consulenze.questionari"))
+
+    smtp_server, smtp_port, email_mittente, password_mittente, testo = config
+
+    # Prendi info del destinatario (cliente assicurativo)
+    cur.execute("SELECT email, nome, cognome FROM clienti_assicurativi WHERE id = %s AND cliente_id = %s", (cliente_id, session["user_id"]))
+    cliente = cur.fetchone()
+    if not cliente:
+        flash("Cliente non trovato", "danger")
+        return redirect(url_for("manage_consulenze.questionari"))
+
+    email_destinatario, nome, cognome = cliente
+
+    # Percorso al PDF
+    filename = f"questionario_{cliente_id}.pdf"
+    filepath = os.path.join("app", "static", "pdf_generati", filename)
+
+    if not os.path.exists(filepath):
+        flash("❌ PDF non generato, impossibile inviare", "danger")
+        return redirect(url_for("manage_consulenze.questionari"))
+
+    try:
+        # Prepara l’email
+        msg = EmailMessage()
+        msg["Subject"] = f"📄 Questionario Assicurativo - {nome} {cognome}"
+        msg["From"] = email_mittente
+        msg["To"] = email_destinatario
+        msg.set_content(testo or "In allegato trova il questionario assicurativo.")
+
+        with open(filepath, "rb") as f:
+            msg.add_attachment(f.read(), maintype="application", subtype="pdf", filename=filename)
+
+        # Invia tramite SMTP
+        with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
+            server.login(email_mittente, password_mittente)
+            server.send_message(msg)
+
+        # Dopo aver inviato correttamente l'email
+        cur = conn.cursor()
+        cur.execute("""
+            UPDATE clienti_assicurativi
+            SET questionario_inviato = TRUE,
+                nome_questionario_inviato = %s
+            WHERE id = %s
+        """, (template_file, cliente_id))
+        conn.commit()
+        cur.close()
+
+
+
+        # Aggiorna DB (puoi aggiungere colonna "questionario_inviato" se vuoi)
+        flash("✅ Questionario inviato correttamente", "success")
+
+    except Exception as e:
+        print("Errore invio email:", e)  # AGGIUNGI QUESTO
+        flash(f"❌ Errore durante l'invio: {str(e)}", "danger")
+
+
+    cur.close()
+    return redirect(url_for("manage_consulenze.questionari"))
+
+
+

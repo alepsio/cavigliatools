@@ -1,0 +1,48 @@
+{% extends "layouts/base_tool.html" %}
+
+{% block title %}📨 Configurazione Email{% endblock %}
+
+{% block sidebar_sections %}
+<a href="{{ url_for('manage_consulenze.index') }}">👤 Anagrafica Clienti</a>
+<a href="{{ url_for('manage_consulenze.panoramica') }}">📊 Panoramica</a>
+<a href="{{ url_for('manage_consulenze.questionari') }}">📝 Questionari PDF</a>
+<a href="{{ url_for('manage_consulenze.gestione_email') }}" class="">📨 Configurazione Email</a>
+{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📨 Configura invio email automatico</h2>
+
+<form method="POST">
+  <div class="row g-4">
+    <div class="col-md-6">
+      <label for="smtp_server" class="form-label">SMTP Server</label>
+      <input type="text" class="form-control" id="smtp_server" name="smtp_server" required
+             value="{{ config.smtp_server if config else '' }}" placeholder="es: smtp.gmail.com">
+    </div>
+    <div class="col-md-3">
+      <label for="smtp_port" class="form-label">Porta SMTP</label>
+      <input type="number" class="form-control" id="smtp_port" name="smtp_port" required
+             value="{{ config.smtp_port if config else '' }}" placeholder="es: 465">
+    </div>
+    <div class="col-md-6">
+      <label for="email_mittente" class="form-label">Email Mittente</label>
+      <input type="email" class="form-control" id="email_mittente" name="email_mittente" required
+             value="{{ config.email_mittente if config else '' }}">
+    </div>
+    <div class="col-md-6">
+      <label for="password_mittente" class="form-label">Password/App Password</label>
+      <input type="password" class="form-control" id="password_mittente" name="password_mittente"
+             value="{{ config.password_mittente if config else '' }}">
+    </div>
+    <div class="col-12">
+      <label for="testo_predefinito" class="form-label">Testo Predefinito dell'Email</label>
+      <textarea name="testo_predefinito" id="testo_predefinito" rows="6" class="form-control"
+                placeholder="Gentile cliente, in allegato trova il questionario da compilare...">{{ config.testo_predefinito if config else '' }}</textarea>
+    </div>
+
+    <div class="col-12 mt-4">
+      <button type="submit" class="btn btn-primary px-4">💾 Salva Configurazione</button>
+    </div>
+  </div>
+</form>
+{% endblock %}

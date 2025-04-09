@@ -2,12 +2,12 @@
 
 {% block title %}Gestione Consulenze Assicurative{% endblock %}
 
+
 {% block sidebar_sections %}
-<a href="{{ url_for('manage_consulenze.index') }}"">👤 Anagrafica Clienti</a>
-<a href="{{ url_for('manage_consulenze.panoramica') }}">📊 Panoramica Clienti</a>
+<a href="{{ url_for('manage_consulenze.index') }}">👤 Anagrafica Clienti</a>
+<a href="{{ url_for('manage_consulenze.panoramica') }}">📊 Panoramica</a>
 <a href="{{ url_for('manage_consulenze.questionari') }}">📝 Questionari PDF</a>
-<a href="#" onclick="showSection('polizze')">📄 Polizze Assicurative</a>
-<a href="#" onclick="showSection('scadenze')">📅 Scadenze e Notifiche</a>
+<a href="{{ url_for('manage_consulenze.gestione_email') }}" class="">📨 Configurazione Email</a>
 {% endblock %}
 
 {% block content %}
